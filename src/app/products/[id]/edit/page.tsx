@@ -2,13 +2,23 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getProductById } from "@/services/productService";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { getProductById, updateProduct } from "@/services/productService";
 import { Product } from "@/utils/supabase/types";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import ProductForm from "@/components/product-form";
 import { LoadingPage } from "@/components/loading-page";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Trophy } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
 
 export default function EditProductPage() {
@@ -20,7 +30,9 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch product data
+  const [finishDialogOpen, setFinishDialogOpen] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+
   useEffect(() => {
     async function fetchProduct() {
       try {
@@ -39,6 +51,20 @@ export default function EditProductPage() {
     }
   }, [productId]);
 
+  const handleFinish = async () => {
+    setFinishing(true);
+    try {
+      await updateProduct(productId, {
+        date_finished: format(new Date(), "yyyy-MM-dd"),
+        percent_remaining: 0,
+      });
+      toast.success("Product marked as finished!");
+      router.push("/empties");
+    } catch {
+      toast.error("Failed to finish product");
+      setFinishing(false);
+    }
+  };
 
   if (loading) return <LoadingPage variant="products" message="Loading product" />;
 
@@ -57,6 +83,8 @@ export default function EditProductPage() {
       </div>
     );
   }
+
+  const alreadyFinished = !!product.date_finished;
 
   return (
     <div className='max-w-2xl mx-auto space-y-6'>
@@ -77,6 +105,54 @@ export default function EditProductPage() {
           />
         </CardContent>
       </Card>
+
+      {!alreadyFinished && (
+        <div className="rounded-2xl border-2 border-dashed border-border p-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="font-semibold text-sm">Finished this product?</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Sets today as the finish date and moves it to your Empties.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0 gap-1.5"
+            onClick={() => setFinishDialogOpen(true)}
+          >
+            <Trophy className="h-4 w-4" />
+            Mark as empty
+          </Button>
+        </div>
+      )}
+
+      <Dialog open={finishDialogOpen} onOpenChange={setFinishDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark as empty?</DialogTitle>
+            <DialogDescription>
+              This will set today as the finish date for{" "}
+              <span className="font-medium text-foreground">
+                {product.brand} — {product.name}
+              </span>{" "}
+              and move it to your Empties. You can still edit the finish date afterwards.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setFinishDialogOpen(false)}
+              disabled={finishing}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleFinish} disabled={finishing}>
+              <Trophy className="h-4 w-4" />
+              {finishing ? "Saving…" : "Mark as empty"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

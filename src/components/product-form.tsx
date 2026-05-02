@@ -10,15 +10,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { getTheme, ThemeColor } from "@/lib/category-theme";
 import {
   Product,
   ProductTypes,
@@ -141,16 +135,26 @@ const addValidationRefinements = (mode: "add" | "edit") => {
   }
 };
 
+const PILL_SELECTED: Record<ThemeColor, string> = {
+  coral:  "bg-tint-coral border-brand-coral/40 text-foreground",
+  sun:    "bg-tint-sun border-brand-sun/40 text-foreground",
+  mint:   "bg-tint-mint border-brand-mint/40 text-foreground",
+  sky:    "bg-tint-sky border-brand-sky/40 text-foreground",
+  violet: "bg-tint-violet border-brand-violet/40 text-foreground",
+};
+
 export interface ProductFormProps {
   mode: "add" | "edit";
   initialData?: Product;
   productId?: string; // For edit mode
+  onClose?: () => void;
 }
 
 export default function ProductForm({
   mode,
   initialData,
   productId,
+  onClose,
 }: ProductFormProps) {
   const [newTag, setNewTag] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -302,7 +306,11 @@ export default function ProductForm({
         toast.success("Product updated successfully!");
       }
 
-      router.push("/products");
+      if (onClose) {
+        onClose();
+      } else {
+        router.push("/products");
+      }
       router.refresh();
     } catch (error) {
       console.error(`Error ${mode === "add" ? "adding" : "updating"} product:`, error);
@@ -313,7 +321,11 @@ export default function ProductForm({
   };
 
   const handleCancel = () => {
-    router.back();
+    if (onClose) {
+      onClose();
+    } else {
+      router.back();
+    }
   };
 
   // Date picker component for both modes
@@ -430,23 +442,32 @@ export default function ProductForm({
 
       {/* Product Type */}
       <div className='space-y-2'>
-        <Label htmlFor='type'>Product Type *</Label>
+        <Label>Product Type *</Label>
         <Controller
           name='type'
           control={control}
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className={errors.type ? "border-red-500" : ""}>
-                <SelectValue placeholder='Select product type' />
-              </SelectTrigger>
-              <SelectContent>
-                {ProductTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
+            <div className={cn("flex flex-wrap gap-2", errors.type && "pb-1")}>
+              {ProductTypes.map((type) => {
+                const selected = field.value === type;
+                const color = getTheme(type).color;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => field.onChange(type)}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-sm font-medium border transition-colors cursor-pointer",
+                      selected
+                        ? PILL_SELECTED[color]
+                        : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
                     {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </button>
+                );
+              })}
+            </div>
           )}
         />
         {errors.type && (

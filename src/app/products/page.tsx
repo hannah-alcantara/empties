@@ -1,9 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Filter, Search, X } from "lucide-react";
+import { Filter, Search, Sparkles, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,17 +13,21 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
+import { useProductForm } from "@/components/product-form-provider";
 import { Product } from "@/utils/supabase/types";
-import { deleteProduct, getProducts } from "@/services/productService";
+import { createProduct, deleteProduct, getProducts, updateProduct } from "@/services/productService";
 import ProductCard from "@/components/product-card";
 import { isProductFinished, getProductStatus, sortProductsByExpiration } from "@/lib/date-utils";
 import { useMemo } from "react";
 import { LoadingPage } from "@/components/loading-page";
 import { toast } from "sonner";
+import { DEMO_PRODUCTS } from "@/lib/demo-data";
 
 export default function ProductsPage() {
+  const { openAdd } = useProductForm();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingDemo, setLoadingDemo] = useState(false);
   const [error, setError] = useState("");
   
   // Filter and search state
@@ -127,6 +130,40 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
+  const handleLoadDemoData = async () => {
+    setLoadingDemo(true);
+    try {
+      const created = await Promise.all(DEMO_PRODUCTS.map((p) => createProduct(p)));
+      setProducts((prev) => [...prev, ...created]);
+      toast.success(`${created.length} demo products loaded! Explore the tracking features.`);
+    } catch (err) {
+      console.error("Failed to load demo data:", err);
+      toast.error("Failed to load demo data. Please try again.");
+    } finally {
+      setLoadingDemo(false);
+    }
+  };
+
+  const handleLogUsage = async (productId: string) => {
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+    const newPct = Math.max(0, (product.percent_remaining ?? 100) - 5);
+    // Optimistic update
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, percent_remaining: newPct } : p))
+    );
+    try {
+      await updateProduct(productId, { percent_remaining: newPct });
+      toast.success(`Logged use — ${newPct}% remaining`);
+    } catch {
+      // Revert on failure
+      setProducts((prev) =>
+        prev.map((p) => (p.id === productId ? { ...p, percent_remaining: product.percent_remaining } : p))
+      );
+      toast.error("Failed to log usage. Please try again.");
+    }
+  };
+
   const handleDeleteProduct = async (productId: string) => {
     try {
       await deleteProduct(productId);
@@ -152,6 +189,15 @@ export default function ProductsPage() {
             Manage your skincare product collection
           </p>
         </div>
+        <Button
+          variant='outline'
+          onClick={handleLoadDemoData}
+          disabled={loadingDemo}
+          className='flex items-center gap-2'
+        >
+          <Sparkles className='h-4 w-4' />
+          {loadingDemo ? "Loading..." : "Load Demo Data"}
+        </Button>
       </div>
 
       {/* Filter and Search */}
@@ -265,7 +311,7 @@ export default function ProductsPage() {
               <CardContent className='p-6'>
                 <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
                   {activeProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
+                    <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} onLogUsage={handleLogUsage} />
                   ))}
                 </div>
               </CardContent>
@@ -275,8 +321,8 @@ export default function ProductsPage() {
                   <p className='text-muted-foreground'>
                     No active products found
                   </p>
-                  <Button asChild className='mt-4'>
-                    <Link href='/products/add'>Add your first product</Link>
+                  <Button className='mt-4' onClick={openAdd}>
+                    Add your first product
                   </Button>
                 </div>
               </CardContent>
@@ -290,7 +336,7 @@ export default function ProductsPage() {
               <CardContent className='p-6'>
                 <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
                   {finishedProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
+                    <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} onLogUsage={handleLogUsage} />
                   ))}
                 </div>
               </CardContent>
@@ -298,8 +344,8 @@ export default function ProductsPage() {
               <CardContent className='flex items-center justify-center py-12'>
                 <div className='text-center'>
                   <p className='text-muted-foreground'>No finished products</p>
-                  <Button asChild className='mt-4'>
-                    <Link href='/products/add'>Add your first product</Link>
+                  <Button className='mt-4' onClick={openAdd}>
+                    Add your first product
                   </Button>
                 </div>
               </CardContent>
