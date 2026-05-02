@@ -1,4 +1,4 @@
-# 🧴 Skincare Tracker
+# 🧴 Empties
 
 A comprehensive web application for managing your skincare product collection, tracking expiration dates, and monitoring product usage.
 
@@ -65,7 +65,7 @@ A comprehensive web application for managing your skincare product collection, t
 
    ```bash
    git clone <repository-url>
-   cd skincare-tracker
+   cd empties
    ```
 
 2. **Install dependencies**

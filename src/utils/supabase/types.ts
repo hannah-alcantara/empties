@@ -9,6 +9,9 @@ export interface Product {
   price?: number | null;
   tags?: string[] | null;
   notes?: string | null;
+  // Planned columns — requires schema migration before use
+  percent_remaining?: number | null;
+  is_project_pan?: boolean | null;
 }
 
 export interface CreateProduct {
