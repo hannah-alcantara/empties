@@ -173,6 +173,10 @@ Defined in `src/types/product.ts`. Status badges use tint backgrounds:
 
 ## Coding Conventions
 
+### Package Manager
+
+- **Always use `yarn`** — never `npm` or `pnpm`. Run `yarn install`, `yarn build`, `yarn dev`, etc.
+
 ### General
 
 - **No inline styles** — Tailwind utility classes only.
