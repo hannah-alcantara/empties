@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protected routes: redirect to /sign-in if not authenticated
-  const protectedPaths = ["/dashboard", "/products"];
+  const protectedPaths = ["/dashboard", "/products", "/project-pan", "/empties"];
   const isProtectedRoute = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
@@ -41,13 +41,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated users away from auth pages and root
   const authPaths = ["/sign-in", "/sign-up"];
   const isAuthRoute = authPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
+  const isRoot = request.nextUrl.pathname === "/";
 
-  if (user && isAuthRoute) {
+  if (user && (isAuthRoute || isRoot)) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
