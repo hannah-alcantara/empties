@@ -298,9 +298,9 @@ export default function ProductForm({
           price: editData.price,
           notes: editData.notes,
           tags: editData.tags,
-          date_opened: editData.date_opened ? stringToDate(editData.date_opened) : undefined,
-          date_finished: editData.date_finished ? stringToDate(editData.date_finished) : undefined,
-          expiration_date: stringToDate(editData.expiration_date),
+          date_opened: editData.date_opened ?? null,
+          date_finished: editData.date_finished ?? null,
+          expiration_date: editData.expiration_date,
         };
         await updateProduct(productId, productData);
         toast.success("Product updated successfully!");

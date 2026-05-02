@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/client";
-import { Product } from "@/utils/supabase/types";
+import { Product, ProductUpdate } from "@/utils/supabase/types";
 
 const supabase = createClient();
 
@@ -83,7 +83,7 @@ export async function getProductById(productId: string) {
 
 export async function updateProduct(
   productId: string,
-  updates: Partial<Product>
+  updates: ProductUpdate
 ) {
   const user = await getAuthenticatedUser();
 

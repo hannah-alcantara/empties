@@ -50,6 +50,8 @@ export interface ProductUpdate {
   price?: number | null;
   notes?: string | null;
   tags?: string[] | null;
+  percent_remaining?: number | null;
+  is_project_pan?: boolean | null;
 }
 
 export interface ProductCardProps {

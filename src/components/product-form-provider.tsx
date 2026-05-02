@@ -34,7 +34,7 @@ export function ProductFormProvider({ children }: { children: React.ReactNode })
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const editOnSaved = useRef<(() => void) | undefined>();
+  const editOnSaved = useRef<(() => void) | undefined>(undefined);
   const router = useRouter();
 
   const handleAddClose = () => {

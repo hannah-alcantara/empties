@@ -140,15 +140,14 @@ export default function ProjectPanPage() {
     if (!finishTarget || !finishDate) return;
     setFinishing(true);
     try {
-      const date = new Date(finishDate);
       await updateProduct(finishTarget.id, {
-        date_finished: date,
+        date_finished: finishDate,
         percent_remaining: 0,
       });
       setProducts((prev) =>
         prev.map((p) =>
           p.id === finishTarget.id
-            ? { ...p, date_finished: date, percent_remaining: 0 }
+            ? { ...p, date_finished: new Date(finishDate), percent_remaining: 0 }
             : p,
         ),
       );
