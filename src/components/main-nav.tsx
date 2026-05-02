@@ -1,245 +1,117 @@
 "use client";
 
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
-import { createClient } from "@/utils/supabase/client";
-
-import {
-  Home,
-  Package,
-  Calendar,
-  Plus,
-  AlignJustify,
-  LogOut,
-} from "lucide-react";
+import { Plus, LogOut } from "lucide-react";
+import { Button } from "./ui/button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { useProductForm } from "./product-form-provider";
+import { createClient } from "@/utils/supabase/client";
 import { useEffect, useState } from "react";
-import { Button } from "./ui/button";
 import type { User } from "@supabase/supabase-js";
 
-const navItems = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: Home,
-  },
-  {
-    href: "/products",
-    label: "Products",
-    icon: Package,
-  },
-];
+const NAV_LINKS = [
+  { label: "My Shelf",    href: "/dashboard" },
+  { label: "Project Pan", href: "/project-pan" },
+  { label: "Empties",     href: "/empties" },
+] as const;
 
 export const MainNav = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const { openAdd } = useProductForm();
   const [user, setUser] = useState<User | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, []);
 
   const handleSignOut = async () => {
+    const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/");
-    router.refresh();
   };
 
-  const isAuthPage = pathname === "/sign-in" || pathname === "/sign-up";
-  const isLandingPage = pathname === "/";
-  const showNavItems = user && !isAuthPage;
+  // Derive initials from email
+  const initials = user?.email ? user.email[0].toUpperCase() : null;
 
   return (
-    <div>
-      <NavigationMenu className='border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
-        <div className='container mx-auto px-4'>
-          {/* Mobile Nav */}
-          <div className='flex justify-between items-center md:hidden h-16'>
-            {showNavItems ? (
-              <Sheet>
-                <SheetTrigger>
-                  <AlignJustify className='h-4 w-4 md:hidden' />
-                </SheetTrigger>
-                <SheetContent side='left'>
-                  <SheetHeader>
-                    <div className='flex flex-col gap-8'>
-                      <div>
-                        <Link
-                          href='/dashboard'
-                          className='flex flex-row items-center space-x-6'
-                        >
-                          <Calendar className='h-6 w-6' />
-                          <span className='font-bold text-xl'>
-                            Skincare Tracker
-                          </span>
-                        </Link>
-                      </div>
-                      {navItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <div
-                            key={item.href}
-                            className='flex items-center space-x-6'
-                          >
-                            <Icon className='h-4 w-4' />
-                            <Link
-                              href={item.href}
-                              className={cn(
-                                "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-                                pathname === item.href
-                                  ? "text-primary"
-                                  : "text-muted-foreground"
-                              )}
-                            >
-                              {item.label}
-                            </Link>
-                          </div>
-                        );
-                      })}
-                      <div className='flex items-center space-x-6'>
-                        <LogOut className='h-4 w-4' />
-                        <button
-                          onClick={handleSignOut}
-                          className='text-sm font-medium text-muted-foreground transition-colors hover:text-primary'
-                        >
-                          Sign Out
-                        </button>
-                      </div>
-                    </div>
-                  </SheetHeader>
-                </SheetContent>
-              </Sheet>
-            ) : (
-              <div />
-            )}
-            <div className='absolute left-1/2 -translate-x-1/2'>
-              <Link
-                href={user ? "/dashboard" : "/"}
-                className='flex items-center space-x-2'
-              >
-                <span className='font-bold text-xl'>Skincare Tracker</span>
-              </Link>
-            </div>
-            {showNavItems && (
-              <div className='flex items-center gap-2'>
-                <Button asChild size='sm' variant='secondary'>
-                  <Link href='/products/add'>
-                    <Plus />
-                  </Link>
-                </Button>
-              </div>
-            )}
-            {!user && !isAuthPage && isLandingPage && (
-              <div className='flex items-center gap-2'>
-                <Button asChild size='sm' variant='secondary'>
-                  <Link href='/sign-in'>Sign In</Link>
-                </Button>
-              </div>
-            )}
+    <nav className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
+      <div className="container mx-auto px-4 flex items-center justify-between h-16">
+
+        {/* Logo */}
+        <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <div className="flex -space-x-1.5">
+            <span className="h-3.5 w-3.5 rounded-full bg-brand-coral ring-2 ring-background transition-transform duration-200 group-hover:scale-110" />
+            <span className="h-3.5 w-3.5 rounded-full bg-brand-sun  ring-2 ring-background transition-transform duration-200 group-hover:scale-110 delay-[25ms]" />
+            <span className="h-3.5 w-3.5 rounded-full bg-brand-mint ring-2 ring-background transition-transform duration-200 group-hover:scale-110 delay-[50ms]" />
+            <span className="h-3.5 w-3.5 rounded-full bg-brand-sky  ring-2 ring-background transition-transform duration-200 group-hover:scale-110 delay-[75ms]" />
+            <span className="h-3.5 w-3.5 rounded-full bg-brand-violet ring-2 ring-background transition-transform duration-200 group-hover:scale-110 delay-[100ms]" />
           </div>
+          <span className="font-bold text-lg tracking-tight">Empties</span>
+        </Link>
 
-          {/* Desktop Nav */}
-          <NavigationMenuList className='hidden md:flex items-center justify-between h-16'>
-            <div className='flex items-center space-x-8'>
-              <NavigationMenuItem>
-                <NavigationMenuLink
-                  className='hover:bg-transparent focus:bg-transparent'
-                  asChild
-                >
-                  <Link
-                    href={user ? "/dashboard" : "/"}
-                    className='flex items-center space-x-2'
-                  >
-                    <Calendar className='h-6 w-6' />
-                    <span className='font-bold text-xl'>Skincare Tracker</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              {showNavItems && (
-                <NavigationMenuItem className='flex items-center space-x-6'>
-                  {navItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <NavigationMenuLink asChild key={item.href}>
-                        <Link
-                          href={item.href}
-                          className={cn(
-                            "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-                            pathname === item.href
-                              ? "text-primary"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          <Icon className='h-4 w-4' />
-                          <span>{item.label}</span>
-                        </Link>
-                      </NavigationMenuLink>
-                    );
-                  })}
-                </NavigationMenuItem>
+        {/* Nav links — desktop only */}
+        <div className="hidden md:flex items-center gap-0.5">
+          {NAV_LINKS.map(({ label, href }) => (
+            <Link
+              key={label}
+              href={href}
+              className={cn(
+                "px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors duration-200",
+                "text-muted-foreground hover:text-foreground hover:bg-accent",
+                pathname === href && "text-foreground bg-accent"
               )}
-            </div>
-
-            {showNavItems && (
-              <div className='flex items-center gap-4'>
-                <span className='text-sm text-muted-foreground'>
-                  {user.email}
-                </span>
-                <NavigationMenuItem>
-                  <NavigationMenuLink href='/products/add'>
-                    <Button>
-                      <Plus className='h-4 w-4 mr-2' />
-                      Add Product
-                    </Button>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <Button variant='ghost' size='sm' onClick={handleSignOut}>
-                  <LogOut className='h-4 w-4' />
-                </Button>
-              </div>
-            )}
-
-            {!user && !isAuthPage && (
-              <div className='flex items-center gap-2'>
-                <Button asChild variant='ghost' size='sm'>
-                  <Link href='/sign-in'>Sign In</Link>
-                </Button>
-                <Button asChild size='sm'>
-                  <Link href='/sign-up'>Sign Up</Link>
-                </Button>
-              </div>
-            )}
-          </NavigationMenuList>
+            >
+              {label}
+            </Link>
+          ))}
         </div>
-      </NavigationMenu>
-    </div>
+
+        {/* Right side actions */}
+        <div className="flex items-center gap-2">
+          {user && (
+            <>
+              <Button onClick={openAdd} size="sm">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Add Product</span>
+              </Button>
+
+              {/* Avatar + sign-out */}
+              <div className="flex items-center gap-1.5">
+                <div
+                  className="h-8 w-8 rounded-full bg-brand-violet/20 border border-brand-violet/30 flex items-center justify-center text-xs font-bold text-brand-violet"
+                  title={user.email}
+                >
+                  {initials}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                  onClick={handleSignOut}
+                  title="Sign out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            </>
+          )}
+
+          {!user && (
+            <Button asChild size="sm" variant="outline">
+              <Link href="/sign-in">Sign in</Link>
+            </Button>
+          )}
+        </div>
+      </div>
+    </nav>
   );
 };

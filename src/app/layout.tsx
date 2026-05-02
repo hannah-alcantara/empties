@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { MainNav } from "@/components/main-nav";
+import { ProductFormProvider } from "@/components/product-form-provider";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Skincare Tracker",
+  title: "Empties",
   description: "A collection of your skincare products",
 };
 
@@ -27,14 +28,16 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${plusJakartaSans.variable} antialiased`}
       >
         <div className='min-h-screen'>
-          <MainNav />
-          <main className='container mx-auto px-4 py-8'>
-            {children}
-            <Toaster />
-          </main>
+          <ProductFormProvider>
+            <MainNav />
+            <main className='container mx-auto px-4 py-8'>
+              {children}
+            </main>
+          </ProductFormProvider>
+          <Toaster />
         </div>
       </body>
     </html>
