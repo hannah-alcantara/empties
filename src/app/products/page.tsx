@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Filter, Search, Sparkles, X } from "lucide-react";
+import { Filter, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -15,19 +15,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import { useProductForm } from "@/components/product-form-provider";
 import { Product } from "@/utils/supabase/types";
-import { createProduct, deleteProduct, getProducts, updateProduct } from "@/services/productService";
+import { deleteProduct, getProducts, updateProduct } from "@/services/productService";
 import ProductCard from "@/components/product-card";
 import { isProductFinished, getProductStatus, sortProductsByExpiration } from "@/lib/date-utils";
 import { useMemo } from "react";
 import { LoadingPage } from "@/components/loading-page";
 import { toast } from "sonner";
-import { DEMO_PRODUCTS } from "@/lib/demo-data";
 
 export default function ProductsPage() {
   const { openAdd } = useProductForm();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingDemo, setLoadingDemo] = useState(false);
   const [error, setError] = useState("");
   
   // Filter and search state
@@ -130,20 +128,6 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
-  const handleLoadDemoData = async () => {
-    setLoadingDemo(true);
-    try {
-      const created = await Promise.all(DEMO_PRODUCTS.map((p) => createProduct(p)));
-      setProducts((prev) => [...prev, ...created]);
-      toast.success(`${created.length} demo products loaded! Explore the tracking features.`);
-    } catch (err) {
-      console.error("Failed to load demo data:", err);
-      toast.error("Failed to load demo data. Please try again.");
-    } finally {
-      setLoadingDemo(false);
-    }
-  };
-
   const handleLogUsage = async (productId: string) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
@@ -189,15 +173,6 @@ export default function ProductsPage() {
             Manage your skincare product collection
           </p>
         </div>
-        <Button
-          variant='outline'
-          onClick={handleLoadDemoData}
-          disabled={loadingDemo}
-          className='flex items-center gap-2'
-        >
-          <Sparkles className='h-4 w-4' />
-          {loadingDemo ? "Loading..." : "Load Demo Data"}
-        </Button>
       </div>
 
       {/* Filter and Search */}

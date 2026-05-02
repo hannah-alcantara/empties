@@ -35,7 +35,8 @@ import {
   Droplets,
 } from "lucide-react";
 import { Product, ProductTypes } from "@/utils/supabase/types";
-import { deleteProduct, getProducts, updateProduct } from "@/services/productService";
+import { createProduct, deleteProduct, getProducts, updateProduct } from "@/services/productService";
+import { DEMO_PRODUCTS } from "@/lib/demo-data";
 import ProductCard from "@/components/product-card";
 import {
   getProductStatus,
@@ -72,6 +73,7 @@ export default function DashboardPage() {
   const [tab, setTab]   = useState<FilterTab>("all");
   const [view, setView] = useState<ViewMode>("grid");
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [loadingDemo, setLoadingDemo] = useState(false);
 
   useEffect(() => {
     getProducts()
@@ -142,6 +144,19 @@ export default function DashboardPage() {
       }
     } catch {
       toast.error("Failed to log use");
+    }
+  };
+
+  const handleLoadDemoData = async () => {
+    setLoadingDemo(true);
+    try {
+      const created = await Promise.all(DEMO_PRODUCTS.map((p) => createProduct(p)));
+      setProducts((prev) => [...prev, ...created]);
+      toast.success(`${created.length} demo products loaded!`);
+    } catch {
+      toast.error("Failed to load demo data. Please try again.");
+    } finally {
+      setLoadingDemo(false);
     }
   };
 
@@ -225,6 +240,17 @@ export default function DashboardPage() {
               ))}
             </SelectContent>
           </Select>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLoadDemoData}
+            disabled={loadingDemo}
+            className="rounded-full gap-1.5 shrink-0"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            {loadingDemo ? "Loading…" : "Load demo"}
+          </Button>
 
           {/* View toggle */}
           <div className="flex rounded-full border-2 border-border bg-card p-0.5 shrink-0 self-start sm:self-auto">

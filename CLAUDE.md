@@ -4,7 +4,7 @@
 
 **Empties** is a skincare product tracker with gamified "project pan" mechanics. Users build a shelf of products, track expiry dates, log usage, and work toward emptying (panning) products.
 
-- **Deployed:** https://skincare-tracker-olive.vercel.app/
+- **Deployed:** https://empties.vercel.app/
 - **Stack:** Next.js 15 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (auth + DB) · Zod v4 · react-hook-form · date-fns · lucide-react · sonner
 
 ---

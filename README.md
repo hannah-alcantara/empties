@@ -2,7 +2,7 @@
 
 A comprehensive web application for managing your skincare product collection, tracking expiration dates, and monitoring product usage.
 
-🌐 **[Live Demo](https://skincare-tracker-olive.vercel.app/)** - Hosted on Vercel
+🌐 **[Live Demo](https://empties.vercel.app/)** - Hosted on Vercel
 
 ## ✨ Features
 
