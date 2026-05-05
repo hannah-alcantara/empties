@@ -24,6 +24,8 @@ export interface CreateProduct {
   price?: number | null;
   tags?: string[] | null;
   notes?: string | null;
+  percent_remaining?: number | null;
+  is_project_pan?: boolean | null;
 }
 
 export const SHELF_LIFE_SUGGESTIONS = {
