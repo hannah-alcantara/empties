@@ -151,6 +151,7 @@ export default function ProductDetailPage() {
   const [confirmFinishOpen, setConfirmFinishOpen] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevFillRef = useRef<number>(100);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -370,7 +371,17 @@ export default function ProductDetailPage() {
               max={100}
               step={5}
               value={100 - fillLevel}
-              onChange={(e) => { const v = 100 - Number(e.target.value); setFillLevel(v); saveFillLevel(v); }}
+              onChange={(e) => {
+                const v = 100 - Number(e.target.value);
+                if (v === 0) {
+                  prevFillRef.current = fillLevel;
+                  setFillLevel(0);
+                  setTimeout(() => setConfirmFinishOpen(true), 0);
+                } else {
+                  setFillLevel(v);
+                  saveFillLevel(v);
+                }
+              }}
               className="w-full cursor-pointer accent-foreground"
               aria-label="Adjust fill level"
             />
@@ -396,11 +407,12 @@ export default function ProductDetailPage() {
           <Button
             size="lg"
             className="w-full rounded-full h-14 text-base font-semibold gap-2 mt-auto"
+            title="Logs -5% usage"
             onClick={handleLogUse}
             disabled={savingFill || fillLevel === 0}
           >
             <PlusCircle className="h-5 w-5" />
-            {savingFill ? "Saving…" : "Log use -5%"}
+            {savingFill ? "Saving…" : "Log Use"}
           </Button>
         </div>
       </div>
@@ -473,7 +485,7 @@ export default function ProductDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmFinishOpen(false)}>
+            <Button variant="outline" onClick={() => { setConfirmFinishOpen(false); setFillLevel(prevFillRef.current); }}>
               Not yet
             </Button>
             <Button

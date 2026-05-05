@@ -241,17 +241,6 @@ export default function DashboardPage() {
             </SelectContent>
           </Select>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLoadDemoData}
-            disabled={loadingDemo}
-            className="rounded-full gap-1.5 shrink-0"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            {loadingDemo ? "Loading…" : "Load demo"}
-          </Button>
-
           {/* View toggle */}
           <div className="flex rounded-full border-2 border-border bg-card p-0.5 shrink-0 self-start sm:self-auto">
             <button
@@ -306,10 +295,22 @@ export default function DashboardPage() {
               ? "Add your first product to start building your shelf."
               : "No products match these filters. Try adjusting your search."}
           </p>
-          <Button onClick={openAdd}>
-            <Plus className="h-4 w-4" />
-            Add a product
-          </Button>
+          <div className="flex items-center justify-center gap-3">
+            <Button onClick={openAdd}>
+              <Plus className="h-4 w-4" />
+              Add a product
+            </Button>
+            {products.length === 0 && (
+              <Button
+                variant="outline"
+                onClick={handleLoadDemoData}
+                disabled={loadingDemo}
+              >
+                <Sparkles className="h-4 w-4" />
+                {loadingDemo ? "Loading…" : "Load demo data"}
+              </Button>
+            )}
+          </div>
         </div>
       ) : view === "grid" ? (
 

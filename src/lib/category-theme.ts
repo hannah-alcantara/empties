@@ -40,3 +40,11 @@ export const BRAND_BG: Record<ThemeColor, string> = {
   sky:    "bg-brand-sky",
   violet: "bg-brand-violet",
 };
+
+export const BRAND_TEXT: Record<ThemeColor, string> = {
+  coral:  "text-brand-coral",
+  sun:    "text-brand-sun",
+  mint:   "text-brand-mint",
+  sky:    "text-brand-sky",
+  violet: "text-brand-violet",
+};

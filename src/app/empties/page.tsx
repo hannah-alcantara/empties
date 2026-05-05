@@ -6,7 +6,23 @@ import { Product } from "@/utils/supabase/types";
 import { getTheme, TINT_BG } from "@/lib/category-theme";
 import { differenceInDays, differenceInMonths, format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Clock, DollarSign, Droplets, PartyPopper, Trophy } from "lucide-react";
+import {
+  Calendar,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  Droplets,
+  Flame,
+  FlaskConical,
+  Leaf,
+  Lightbulb,
+  Medal,
+  PartyPopper,
+  Recycle,
+  RotateCcw,
+  Star,
+  Trophy,
+} from "lucide-react";
 import { toast } from "sonner";
 
 function toDate(d: Date | string | null | undefined): Date | null {
@@ -23,79 +39,149 @@ function formatDuration(
   if (!start || !end) return null;
   const days = differenceInDays(end, start);
   if (days <= 0) return "< 1 day";
-  if (days < 30) return `${days} day${days === 1 ? "" : "s"}`;
+  if (days < 30) return `${days}d`;
   const months = differenceInMonths(end, start);
-  if (months < 12) return `${months} month${months === 1 ? "" : "s"}`;
+  if (months < 12) return `${months}mo`;
   const years = Math.floor(months / 12);
   const remMonths = months % 12;
-  if (remMonths === 0) return `${years} year${years === 1 ? "" : "s"}`;
+  if (remMonths === 0) return `${years}yr`;
   return `${years}yr ${remMonths}mo`;
 }
 
-function EmptyRow({ product }: { product: Product }) {
+const TIPS: Array<{
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  title: string;
+  body: string;
+}> = [
+  {
+    icon: FlaskConical,
+    color: "text-background",
+    bg: "bg-brand-sky",
+    title: "Reuse the bottle",
+    body: "Rinse empty bottles and repurpose them as travel containers or for DIY skincare mixes.",
+  },
+  {
+    icon: Recycle,
+    color: "text-background",
+    bg: "bg-brand-mint",
+    title: "Recycle responsibly",
+    body: "Brands like Kiehl's, Origins, and Lush offer in-store recycling programs for empty packaging.",
+  },
+  {
+    icon: RotateCcw,
+    color: "text-background",
+    bg: "bg-brand-violet",
+    title: "Look for refills",
+    body: "Many premium serums and moisturizers now offer eco-friendly refill pouches at a lower price.",
+  },
+  {
+    icon: Leaf,
+    color: "text-background",
+    bg: "bg-brand-coral",
+    title: "Go zero-waste",
+    body: "Swap to solid cleansers, bars, or glass-packaged products to reduce single-use plastic over time.",
+  },
+];
+
+const MILESTONES: Array<{
+  count: number;
+  label: string;
+  icon: React.ElementType;
+}> = [
+  { count: 1, label: "First Empty", icon: Star },
+  { count: 5, label: "Dedicated", icon: Flame },
+  { count: 10, label: "Collector", icon: Trophy },
+  { count: 25, label: "Pan Master", icon: Medal },
+  { count: 50, label: "Legend", icon: PartyPopper },
+];
+
+function EmptyCard({ product }: { product: Product }) {
   const theme = getTheme(product.type);
   const finishedDate = toDate(product.date_finished);
   const duration = formatDuration(product.date_opened, product.date_finished!);
 
   return (
-    <div className='flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-border bg-card'>
-      {/* Color swatch */}
+    <div className='group rounded-2xl border-2 border-border bg-card shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col'>
+      {/* Color panel */}
       <div
-        className={`${TINT_BG[theme.color]} h-9 w-9 rounded-lg shrink-0 flex items-center justify-center`}
+        className={`${TINT_BG[theme.color]} relative h-28 flex items-center justify-center overflow-hidden`}
       >
+        {/* Decorative blobs */}
+        <div className='absolute -top-4 -right-4 h-16 w-16 rounded-full bg-background/20' />
+        <div className='absolute -bottom-6 -left-6 h-20 w-20 rounded-full bg-background/20' />
+
+        {/* Done icon */}
+        <div className='relative h-11 w-11 rounded-full bg-background/70 backdrop-blur-sm flex items-center justify-center ring-2 ring-background'>
+          <CheckCircle2 className='h-5 w-5 text-foreground' />
+        </div>
+
+        {/* Project pan badge */}
         {product.is_project_pan && (
-          <Droplets className='h-3.5 w-3.5 text-foreground/40' />
+          <Badge className='absolute top-3 left-3 bg-tint-sky text-foreground border border-brand-sky/30 rounded-full text-[10px] font-semibold gap-1'>
+            <Droplets className='h-2.5 w-2.5' />
+            Panned
+          </Badge>
+        )}
+
+        {/* Duration pill */}
+        {duration && (
+          <div className='absolute bottom-2 right-2 rounded-full bg-background/70 backdrop-blur-sm px-2 py-0.5 text-[10px] font-semibold text-foreground flex items-center gap-1'>
+            <Clock className='h-2.5 w-2.5' />
+            {duration}
+          </div>
         )}
       </div>
 
-      {/* Name + brand · type */}
-      <div className='flex-1 min-w-0'>
-        <p className='font-semibold text-sm leading-tight truncate'>
-          {product.name}
-        </p>
-        <p className='text-xs text-muted-foreground truncate'>
-          {product.brand}
-          <span className='mx-1 opacity-40'>·</span>
+      {/* Body */}
+      <div className='p-4 flex-1 flex flex-col gap-2'>
+        <div>
+          <p className='text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5'>
+            {product.brand}
+          </p>
+          <h3 className='font-semibold text-sm leading-snug line-clamp-2 text-foreground'>
+            {product.name}
+          </h3>
+        </div>
+
+        <Badge
+          variant='secondary'
+          className='w-fit rounded-full text-xs font-medium'
+        >
           {product.type}
-        </p>
-      </div>
-
-      {/* Panned badge — desktop */}
-      {product.is_project_pan && (
-        <Badge className='hidden sm:flex bg-tint-sky text-foreground border border-brand-sky/30 rounded-full text-[10px] font-semibold gap-1 shrink-0'>
-          <Droplets className='h-2.5 w-2.5' />
-          Panned
         </Badge>
-      )}
 
-      {/* Duration — tablet+ */}
-      {duration && (
-        <span className='hidden md:block text-xs font-medium text-foreground tabular-nums shrink-0 w-20 text-right'>
-          {duration}
-        </span>
-      )}
-
-      {/* Price — desktop */}
-      {product.price != null && (
-        <span className='hidden lg:block text-xs text-muted-foreground tabular-nums shrink-0 w-16 text-right'>
-          ${Number(product.price).toFixed(2)}
-        </span>
-      )}
-
-      {/* Finished date */}
-      <div className='text-right shrink-0'>
-        <span className='text-xs text-muted-foreground tabular-nums'>
-          {finishedDate ? (
-            <>
-              <span className='hidden sm:inline'>
-                {format(finishedDate, "MMM d, yyyy")}
+        {product.tags && product.tags.length > 0 && (
+          <div className='flex flex-wrap gap-1'>
+            {product.tags.slice(0, 2).map((tag) => (
+              <span
+                key={tag}
+                className='inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground'
+              >
+                {tag}
               </span>
-              <span className='sm:hidden'>{format(finishedDate, "MMM d")}</span>
-            </>
-          ) : (
-            "—"
+            ))}
+            {product.tags.length > 2 && (
+              <span className='inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground'>
+                +{product.tags.length - 2}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className='mt-auto pt-2.5 border-t border-border flex items-center justify-between'>
+          <span className='text-xs text-muted-foreground flex items-center gap-1'>
+            <Calendar className='h-3 w-3' />
+            {finishedDate ? format(finishedDate, "MMM d, yyyy") : "—"}
+          </span>
+          {product.price != null && (
+            <span className='text-xs text-muted-foreground font-medium tabular-nums'>
+              ${Number(product.price).toFixed(2)}
+            </span>
           )}
-        </span>
+        </div>
       </div>
     </div>
   );
@@ -138,13 +224,11 @@ export default function EmptiesPage() {
 
   const stats = useMemo(() => {
     const total = empties.length;
-
     const pricedEmpties = empties.filter((p) => p.price != null);
     const totalValue = pricedEmpties.reduce(
       (sum, p) => sum + Number(p.price),
       0,
     );
-
     const withDuration = empties.filter(
       (p) => p.date_opened && p.date_finished,
     );
@@ -158,7 +242,6 @@ export default function EmptiesPage() {
             }, 0) / withDuration.length,
           )
         : null;
-
     const projectPanWins = empties.filter((p) => p.is_project_pan).length;
 
     return {
@@ -268,18 +351,104 @@ export default function EmptiesPage() {
         ))}
       </div>
 
+      {/* ── Milestones ── */}
+      {!loading && (
+        <div className='rounded-2xl border-2 border-border bg-card p-5 md:p-6'>
+          <div className='flex items-center gap-2 mb-5'>
+            <div className='h-8 w-8 rounded-lg bg-brand-sun flex items-center justify-center shrink-0'>
+              <Star className='h-4 w-4 text-background' />
+            </div>
+            <h2 className='font-semibold text-base'>Milestones</h2>
+          </div>
+          <div className='flex gap-3 overflow-x-auto pb-1 -mx-1 px-1'>
+            {MILESTONES.map(({ count, label, icon: Icon }) => {
+              const unlocked = stats.total >= count;
+              return (
+                <div
+                  key={count}
+                  className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 min-w-[104px] transition-all duration-200 shrink-0 ${
+                    unlocked
+                      ? "border-brand-sun/40 bg-tint-sun"
+                      : "border-border bg-muted/20 opacity-50"
+                  }`}
+                >
+                  <div
+                    className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                      unlocked ? "bg-brand-sun" : "bg-muted"
+                    }`}
+                  >
+                    <Icon
+                      className={`h-5 w-5 ${unlocked ? "text-background" : "text-muted-foreground"}`}
+                    />
+                  </div>
+                  <div className='text-center'>
+                    <p
+                      className={`text-xs font-bold tabular-nums ${unlocked ? "text-foreground" : "text-muted-foreground"}`}
+                    >
+                      {count} {count === 1 ? "empty" : "empties"}
+                    </p>
+                    <p
+                      className={`text-[10px] leading-tight mt-0.5 ${unlocked ? "text-foreground/70" : "text-muted-foreground"}`}
+                    >
+                      {label}
+                    </p>
+                  </div>
+                  {unlocked && (
+                    <CheckCircle2 className='h-3.5 w-3.5 text-brand-sun shrink-0' />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Tips ── */}
+      <div className='rounded-2xl border-2 border-border bg-card p-5 md:p-6'>
+        <div className='flex items-center gap-2 mb-5'>
+          <div className='h-8 w-8 rounded-lg bg-brand-coral flex items-center justify-center shrink-0'>
+            <Lightbulb className='h-4 w-4 text-background' />
+          </div>
+          <h2 className='font-semibold text-base'>Tips &amp; Ideas</h2>
+        </div>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3'>
+          {TIPS.map(({ icon: Icon, bg, color, title, body }) => (
+            <div
+              key={title}
+              className='rounded-xl border border-border bg-background p-4 flex flex-col gap-3'
+            >
+              <div
+                className={`${bg} h-9 w-9 rounded-lg flex items-center justify-center shrink-0`}
+              >
+                <Icon className={`h-4 w-4 ${color}`} />
+              </div>
+              <div>
+                <p className='font-semibold text-sm leading-snug mb-1'>
+                  {title}
+                </p>
+                <p className='text-xs text-muted-foreground leading-relaxed'>
+                  {body}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ── Timeline ── */}
       {loading ? (
-        <div className='space-y-6'>
-          {Array.from({ length: 3 }).map((_, g) => (
-            <div key={g} className='space-y-2'>
+        <div className='space-y-8'>
+          {Array.from({ length: 2 }).map((_, g) => (
+            <div key={g} className='space-y-3'>
               <div className='h-4 w-28 rounded-md bg-muted/40 animate-pulse mb-3' />
-              {Array.from({ length: 3 - g }).map((_, i) => (
-                <div
-                  key={i}
-                  className='h-[60px] rounded-xl border-2 border-border bg-muted/40 animate-pulse'
-                />
-              ))}
+              <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
+                {Array.from({ length: 4 - g }).map((_, i) => (
+                  <div
+                    key={i}
+                    className='h-56 rounded-2xl bg-muted/40 animate-pulse'
+                  />
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -295,11 +464,11 @@ export default function EmptiesPage() {
           </p>
         </div>
       ) : (
-        <div className='space-y-8'>
+        <div className='space-y-10'>
           {grouped.map(([month, items]) => (
             <div key={month}>
               {/* Month header */}
-              <div className='flex items-center gap-3 mb-3'>
+              <div className='flex items-center gap-3 mb-4'>
                 <span className='text-sm font-semibold text-muted-foreground whitespace-nowrap'>
                   {month}
                 </span>
@@ -309,10 +478,10 @@ export default function EmptiesPage() {
                 </span>
               </div>
 
-              {/* Rows */}
-              <div className='space-y-2'>
+              {/* Card grid */}
+              <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'>
                 {items.map((p) => (
-                  <EmptyRow key={p.id} product={p} />
+                  <EmptyCard key={p.id} product={p} />
                 ))}
               </div>
             </div>

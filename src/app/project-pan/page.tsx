@@ -13,12 +13,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Award,
   Calendar,
   CheckCircle2,
   Crown,
   Droplets,
   Flame,
+  ListCheck,
   Pencil,
   Sparkles,
   Target,
@@ -30,14 +30,10 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { getProducts, updateProduct } from "@/services/productService";
 import { Product } from "@/utils/supabase/types";
-import { getTheme, TINT_BG, BRAND_BG } from "@/lib/category-theme";
+import { getTheme, TINT_BG, BRAND_BG, BRAND_TEXT } from "@/lib/category-theme";
+import { Progress } from "@/components/ui/progress";
 
-import {
-  daysUntil,
-  getEffectiveExpiration,
-  getExpirationStatus,
-} from "@/types/product";
-import { formatDate } from "@/lib/date-utils";
+import { formatDate, getDaysDifference } from "@/lib/date-utils";
 import { toast } from "sonner";
 
 export default function ProjectPanPage() {
@@ -68,11 +64,6 @@ export default function ProjectPanPage() {
 
   const almostThere = useMemo(
     () => activePans.filter((p) => (p.percent_remaining ?? 100) <= 25),
-    [activePans],
-  );
-
-  const inProgress = useMemo(
-    () => activePans.filter((p) => (p.percent_remaining ?? 100) > 25),
     [activePans],
   );
 
@@ -113,11 +104,11 @@ export default function ProjectPanPage() {
     [products],
   );
 
-  const emptiesByType = useMemo(() => {
+  const activeByType = useMemo(() => {
     const map = new Map<string, number>();
-    empties.forEach((p) => map.set(p.type, (map.get(p.type) ?? 0) + 1));
+    products.forEach((p) => map.set(p.type, (map.get(p.type) ?? 0) + 1));
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-  }, [empties]);
+  }, [products]);
 
   const openFinishDialog = (product: Product) => {
     setFinishTarget(product);
@@ -147,7 +138,11 @@ export default function ProjectPanPage() {
       setProducts((prev) =>
         prev.map((p) =>
           p.id === finishTarget.id
-            ? { ...p, date_finished: new Date(finishDate), percent_remaining: 0 }
+            ? {
+                ...p,
+                date_finished: new Date(finishDate),
+                percent_remaining: 0,
+              }
             : p,
         ),
       );
@@ -280,6 +275,102 @@ export default function ProjectPanPage() {
         </Card>
       )}
 
+      {/* ── Almost there (≤25%) ── */}
+      {!loading && almostThere.length > 0 && (
+        <section className='space-y-5'>
+          <div>
+            <h2 className='font-bold text-3xl flex items-center gap-3'>
+              <Flame className='h-7 w-7 text-brand-coral' />
+              Almost there
+            </h2>
+            <p className='text-muted-foreground mt-1'>
+              One last push and these join the Hall of Fame.
+            </p>
+          </div>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+            {almostThere.map((p) => {
+              const theme = getTheme(p.type);
+              const pct = p.percent_remaining ?? 0;
+              const days = p.expiration_date
+                ? getDaysDifference(p.expiration_date)
+                : null;
+              return (
+                <Card
+                  key={p.id}
+                  className='p-6 rounded-2xl hover:shadow-md transition-all hover:-translate-y-0.5'
+                >
+                  <div className='flex items-center gap-3'>
+                    {/* Left: category tint square with % remaining */}
+                    <div
+                      className={`h-12 w-12 rounded-xl ${TINT_BG[theme.color]} flex items-center justify-center shrink-0 ring-2 ring-background`}
+                    >
+                      <span
+                        className={`font-bold text-sm tabular-nums leading-none ${BRAND_TEXT[theme.color]}`}
+                      >
+                        {pct}%
+                      </span>
+                    </div>
+
+                    {/* Center: main content */}
+                    <div className='flex-1 min-w-0 -space-y-1'>
+                      <div className='flex items-center gap-1.5 mb-1.5'>
+                        <p className='text-xs text-muted-foreground font-semibold uppercase tracking-wide truncate'>
+                          {p.brand}
+                        </p>
+                        <Badge
+                          variant='secondary'
+                          className='rounded-full text-[10px] py-0 shrink-0'
+                        >
+                          {p.type}
+                        </Badge>
+                      </div>
+                      <h3 className='font-semibold text-base truncate'>
+                        {p.name}
+                      </h3>
+                      {days !== null && (
+                        <span className='text-xs text-muted-foreground'>
+                          {days < 0
+                            ? `Expired ${Math.abs(days)} days ago`
+                            : `Expires in ${days} days`}{" "}
+                          · {formatDate(p.expiration_date)}
+                        </span>
+                      )}
+                      <Progress
+                        value={100 - pct}
+                        className='h-1.5 mt-3'
+                        indicatorClassName={BRAND_BG[theme.color]}
+                      />
+                    </div>
+
+                    {/* Right: actions pinned to progress bar level */}
+                    <div className='flex flex-row items-center gap-1 shrink-0'>
+                      <Button
+                        size='icon'
+                        variant='ghost'
+                        className='h-8 w-8 text-muted-foreground hover:text-brand-mint'
+                        onClick={() => openFinishDialog(p)}
+                        title='Mark as finished'
+                      >
+                        <CheckCircle2 className='h-4 w-4' />
+                      </Button>
+                      <Button
+                        size='icon'
+                        variant='ghost'
+                        className='h-8 w-8 text-muted-foreground hover:text-destructive'
+                        onClick={() => handleRemoveFromPan(p.id)}
+                        title='Remove from Project Pan'
+                      >
+                        <X className='h-4 w-4' />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* ── Hall of Fame ── */}
       <section className='space-y-5'>
         <div className='flex items-end justify-between flex-wrap gap-3'>
@@ -329,7 +420,7 @@ export default function ProjectPanPage() {
                   <Card
                     className={`relative overflow-hidden p-6 rounded-2xl ${TINT_BG[theme.color]} border-2 border-transparent hover:border-border hover:-translate-y-1 transition-all cursor-pointer h-full`}
                   >
-                    <div className='absolute top-3 right-3 flex items-center gap-1 bg-foreground text-background rounded-full px-2.5 py-1 text-xs font-bold'>
+                    <div className='absolute top-5 right-5 flex items-center gap-1 bg-foreground text-background rounded-full px-2.5 py-1 text-xs font-bold'>
                       <Crown className='h-3 w-3' />#{i + 1}
                     </div>
                     <div className='relative'>
@@ -358,139 +449,6 @@ export default function ProjectPanPage() {
         )}
       </section>
 
-      {/* ── Almost there (≤25%) ── */}
-      {!loading && almostThere.length > 0 && (
-        <section className='space-y-5'>
-          <div>
-            <h2 className='font-bold text-3xl flex items-center gap-3'>
-              <Flame className='h-7 w-7 text-brand-coral' />
-              Almost there
-            </h2>
-            <p className='text-muted-foreground mt-1'>
-              One last push and these join the Hall of Fame.
-            </p>
-          </div>
-          <div className='space-y-3'>
-            {almostThere.map((p) => {
-              const theme = getTheme(p.type);
-              const pct = p.percent_remaining ?? 0;
-              const effExp = getEffectiveExpiration(p);
-              const days = effExp ? daysUntil(effExp) : null;
-              const status = getExpirationStatus(p);
-              return (
-                <Card
-                  key={p.id}
-                  className='p-4 md:p-5 rounded-2xl flex items-center gap-4 hover:shadow-md transition-all hover:-translate-y-0.5'
-                >
-                  <div
-                    className={`h-14 w-14 rounded-2xl ${BRAND_BG[theme.color]} text-background flex items-center justify-center shrink-0 font-bold text-lg tabular-nums`}
-                  >
-                    {pct}%
-                  </div>
-                  <div className='flex-1 min-w-0'>
-                    <div className='flex items-center gap-2 mb-1'>
-                      <p className='text-xs text-muted-foreground font-semibold uppercase tracking-wide'>
-                        {p.brand}
-                      </p>
-                      <Badge
-                        variant='secondary'
-                        className='rounded-full text-[10px] py-0'
-                      >
-                        {p.type}
-                      </Badge>
-                    </div>
-                    <h3 className='font-semibold text-base truncate'>
-                      {p.name}
-                    </h3>
-                    <div className='h-1.5 w-full overflow-hidden rounded-full bg-muted mt-2'>
-                      <div
-                        className='bg-brand-coral h-full rounded-full transition-all duration-500'
-                        style={{ width: `${100 - pct}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className='text-right shrink-0 hidden sm:block'>
-                    <div className='flex items-center gap-1 text-xs text-muted-foreground justify-end mb-0.5'>
-                      <Calendar className='h-3 w-3' />
-                      <span>
-                        {status === "expired" ? "Expired" : "Expires"}
-                      </span>
-                    </div>
-                    <p className='font-bold text-sm tabular-nums'>
-                      {days === null
-                        ? "—"
-                        : status === "expired"
-                          ? `${Math.abs(days)}d ago`
-                          : `${days}d`}
-                    </p>
-                  </div>
-                  <div className='flex gap-1 shrink-0'>
-                    <Button size='sm' onClick={() => openFinishDialog(p)}>
-                      <CheckCircle2 className='h-3.5 w-3.5' />
-                      <span className='hidden sm:inline'>Finish</span>
-                    </Button>
-                    <Button
-                      size='sm'
-                      variant='ghost'
-                      className='text-muted-foreground hover:text-destructive'
-                      onClick={() => handleRemoveFromPan(p.id)}
-                      title='Remove from Project Pan'
-                    >
-                      <X className='h-4 w-4' />
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* ── In progress (>25%) ── */}
-      {!loading && inProgress.length > 0 && (
-        <section className='space-y-5'>
-          <div>
-            <h2 className='font-bold text-3xl flex items-center gap-3'>
-              <Sparkles className='h-7 w-7 text-brand-sky' />
-              In progress
-            </h2>
-            <p className='text-muted-foreground mt-1'>
-              Working on these. Stay focused, no new buys.
-            </p>
-          </div>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
-            {inProgress.map((p) => {
-              const theme = getTheme(p.type);
-              const pct = p.percent_remaining ?? 100;
-              return (
-                <Link key={p.id} href={`/products/${p.id}`}>
-                  <Card className='p-4 rounded-2xl flex flex-row items-center gap-3 hover:shadow-md transition-all cursor-pointer'>
-                    <div
-                      className={`h-2 w-2 rounded-full ${BRAND_BG[theme.color]} shrink-0`}
-                    />
-                    <div className='flex-1 min-w-0'>
-                      <p className='font-semibold text-sm truncate'>{p.name}</p>
-                      <p className='text-xs text-muted-foreground truncate'>
-                        {p.brand} &middot; {p.type}
-                      </p>
-                    </div>
-                    <div className='w-24 shrink-0 h-1.5 overflow-hidden rounded-full bg-muted'>
-                      <div
-                        className={`${BRAND_BG[theme.color]} h-full rounded-full transition-all duration-500`}
-                        style={{ width: `${100 - pct}%` }}
-                      />
-                    </div>
-                    <span className='text-xs font-bold tabular-nums w-10 text-right shrink-0'>
-                      {pct}%
-                    </span>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       {/* ── Empty state (no pans at all) ── */}
       {!loading && activePans.length === 0 && (
         <div className='text-center py-20 border-2 border-dashed border-border rounded-3xl bg-card/40'>
@@ -512,19 +470,19 @@ export default function ProjectPanPage() {
         <section className='grid md:grid-cols-2 gap-5 pb-4'>
           {/* Hall of Fame by category */}
           <Card className='p-6 rounded-2xl'>
-            <h3 className='font-bold text-xl mb-4 flex items-center gap-2'>
-              <Award className='h-5 w-5 text-brand-violet' />
-              Products by category
+            <h3 className='font-bold text-xl flex items-center gap-2'>
+              <ListCheck className='h-6 w-6 text-brand-violet' />
+              All Products by Category
             </h3>
-            {emptiesByType.length === 0 ? (
+            {activeByType.length === 0 ? (
               <p className='text-sm text-muted-foreground'>
-                Finish your first product to see your strengths.
+                Add products to your shelf to see your category breakdown.
               </p>
             ) : (
               <ul className='space-y-3'>
-                {emptiesByType.map(([type, count]) => {
+                {activeByType.map(([type, count]: [string, number]) => {
                   const theme = getTheme(type);
-                  const max = emptiesByType[0][1];
+                  const max = activeByType[0][1];
                   return (
                     <li key={type} className='flex items-center gap-3'>
                       <span className='text-sm font-medium w-28 shrink-0 truncate'>
@@ -549,7 +507,7 @@ export default function ProjectPanPage() {
           {/* Pan tips */}
           <Card className='p-6 rounded-2xl bg-gradient-to-br from-tint-mint to-tint-sky'>
             <h3 className='font-bold text-xl mb-4 flex items-center gap-2'>
-              <Sparkles className='h-5 w-5 text-brand-mint' />
+              <Sparkles className='h-6 w-6 text-brand-mint' />
               Pan tips
             </h3>
             <ul className='space-y-3 text-sm'>
